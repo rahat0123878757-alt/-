@@ -1,1 +1,462 @@
-# -
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আধুনিক পর্যায় সারণি</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font: Inter (for Tailwind) and a fallback for Bengali -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Baloo+Da+2:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Baloo Da 2', 'Inter', sans-serif;
+            background-color: #f8f8f8;
+        }
+        /* Custom scrollbar styling for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 4px;
+        }
+        .element-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .element-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-600 shadow-lg p-4 text-white sticky top-0 z-10">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center tracking-wider">আধুনিক পর্যায় সারণি</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 flex-grow">
+        <!-- Search Bar and Voice Search -->
+        <div class="mb-8 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+            <input type="text" id="searchInput" oninput="filterElements()" placeholder="মৌলের প্রতীক, নাম বা পরমাণু সংখ্যা দিয়ে খুঁজুন..."
+                   class="w-full md:w-3/5 p-3 text-lg border-2 border-blue-300 rounded-xl focus:ring-4 focus:ring-blue-500 focus:border-blue-500 shadow-md transition duration-300">
+            
+            <button id="voiceSearchBtn" onclick="startVoiceSearch()"
+                    class="w-full md:w-auto p-3 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition duration-300 flex items-center justify-center shadow-md disabled:bg-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7v0a7 7 0 01-7-7v0m14 0a7 7 0 00-7-7m7 7v0m-7 7v0m-7-7v0m7-7v0m0 14v0m-7 0a7 7 0 01-7-7m7 7v0m0-14v0a7 7 0 017 7m7 0a7 7 0 00-7-7" />
+                </svg>
+                ভয়েস সার্চ
+            </button>
+        </div>
+
+        <!-- Element Grid (Main Display) -->
+        <div id="elementGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            <!-- Elements will be inserted here by JavaScript -->
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden text-center text-xl text-gray-500 p-10">
+            কোনো ফলাফল পাওয়া যায়নি।
+        </div>
+    </main>
+
+    <!-- Detail Modal/Popup -->
+    <div id="elementModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4" onclick="closeModal(event)">
+        <div id="modalContent" class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+            <!-- Modal content will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="p-4 bg-gray-800 text-white text-center text-sm mt-8">
+        <p class="mb-1">Developed by RM71 team</p>
+        <p>Main Designer: Rahat (owner of RM71 team)</p>
+    </footer>
+
+    <!-- JavaScript and Hardcoded Data -->
+    <script>
+        // Data Structure for all 118 Elements
+        // Key names are English for consistency; display names are Bengali.
+        const P_TABLE_DATA = [
+            // Example data structure, populated with 118 elements for a functional periodic table
+            {
+                "b_name": "হাইড্রোজেন", "e_name": "Hydrogen", "symbol": "H", "number": 1, "mass": 1.008, "period": 1, "group": 1, "block": "s",
+                "config": "1s¹", "valence_e": 1, "valency": "+1, -1", "oxide": "H₂O (Amphoteric)", "state": "গ্যাস", "nature": "অধাতু", 
+                "uses": "রকেট জ্বালানি, অ্যামোনিয়া উৎপাদন", "isotopes": "¹H, ²H, ³H", "discovery": "হেনরি ক্যাভেন্ডিশ (১৭৬৬)"
+            },
+            {
+                "b_name": "হিলিয়াম", "e_name": "Helium", "symbol": "He", "number": 2, "mass": 4.0026, "period": 1, "group": 18, "block": "s",
+                "config": "1s²", "valence_e": 2, "valency": "0", "oxide": "অজানা", "state": "গ্যাস", "nature": "নিষ্ক্রিয় গ্যাস", 
+                "uses": "বেলুন, শীতলীকরণ", "isotopes": "³He, ⁴He", "discovery": "পিয়ের জ্যানসেন, জোসেফ নর্ম্যান লকইয়ার (১৮৬৮)"
+            },
+            {
+                "b_name": "লিথিয়াম", "e_name": "Lithium", "symbol": "Li", "number": 3, "mass": 6.94, "period": 2, "group": 1, "block": "s",
+                "config": "[He] 2s¹", "valence_e": 1, "valency": "+1", "oxide": "Li₂O (Basic)", "state": "কঠিন", "nature": "ক্ষার ধাতু", 
+                "uses": "ব্যাটারি, মিশ্র ধাতু", "isotopes": "⁶Li, ⁷Li", "discovery": "জোহান এ. আর্ফভেডসন (১৮১৭)"
+            },
+            {
+                "b_name": "বেরিলিয়াম", "e_name": "Beryllium", "symbol": "Be", "number": 4, "mass": 9.0122, "period": 2, "group": 2, "block": "s",
+                "config": "[He] 2s²", "valence_e": 2, "valency": "+2", "oxide": "BeO (Amphoteric)", "state": "কঠিন", "nature": "মৃৎক্ষার ধাতু", 
+                "uses": "মহাকাশ সরঞ্জাম, এক্স-রে উইন্ডো", "isotopes": "⁹Be", "discovery": "লুই-নিকোলাস ভকলিন (১৭৯৮)"
+            },
+            {
+                "b_name": "বোরন", "e_name": "Boron", "symbol": "B", "number": 5, "mass": 10.81, "period": 2, "group": 13, "block": "p",
+                "config": "[He] 2s² 2p¹", "valence_e": 3, "valency": "+3", "oxide": "B₂O₃ (Acidic)", "state": "কঠিন", "nature": "ধাতুকল্প", 
+                "uses": "ফাইবার অপটিক্স, ডিটারজেন্ট", "isotopes": "¹⁰B, ¹¹B", "discovery": "জোসেফ এল. গে-লুসাক, লুই জে. থেনার্ড (১৮০৮)"
+            },
+            {
+                "b_name": "কার্বন", "e_name": "Carbon", "symbol": "C", "number": 6, "mass": 12.011, "period": 2, "group": 14, "block": "p",
+                "config": "[He] 2s² 2p²", "valence_e": 4, "valency": "±4, +2", "oxide": "CO₂, CO", "state": "কঠিন", "nature": "অধাতু", 
+                "uses": "জৈব যৌগ, জ্বালানি", "isotopes": "¹²C, ¹³C, ¹⁴C", "discovery": "প্রাচীনকাল থেকে পরিচিত"
+            },
+            {
+                "b_name": "নাইট্রোজেন", "e_name": "Nitrogen", "symbol": "N", "number": 7, "mass": 14.007, "period": 2, "group": 15, "block": "p",
+                "config": "[He] 2s² 2p³", "valence_e": 5, "valency": "±3, +5", "oxide": "N₂O, NO, NO₂", "state": "গ্যাস", "nature": "অধাতু", 
+                "uses": "অ্যামোনিয়া, সার, শীতলীকরণ", "isotopes": "¹⁴N, ¹⁵N", "discovery": "ড্যানিয়েল রাদারফোর্ড (১৭৭২)"
+            },
+            {
+                "b_name": "অক্সিজেন", "e_name": "Oxygen", "symbol": "O", "number": 8, "mass": 15.999, "period": 2, "group": 16, "block": "p",
+                "config": "[He] 2s² 2p⁴", "valence_e": 6, "valency": "-2", "oxide": "অনেক (জল, CO₂)", "state": "গ্যাস", "nature": "অধাতু", 
+                "uses": "শ্বাস-প্রশ্বাস, দহন", "isotopes": "¹⁶O, ¹⁷O, ¹⁸O", "discovery": "জোসেফ প্রিস্টলি, কার্ল উইলহেম শিলি (১৭৭৪)"
+            },
+            {
+                "b_name": "ফ্লোরিন", "e_name": "Fluorine", "symbol": "F", "number": 9, "mass": 18.998, "period": 2, "group": 17, "block": "p",
+                "config": "[He] 2s² 2p⁵", "valence_e": 7, "valency": "-1", "oxide": "OF₂", "state": "গ্যাস", "nature": "হ্যালোজেন", 
+                "uses": "টুথপেস্ট, ইউরেনিয়াম সমৃদ্ধকরণ", "isotopes": "¹⁹F", "discovery": "আঁরি মোয়াসাঁ (১৮৮৬)"
+            },
+            {
+                "b_name": "নিয়ন", "e_name": "Neon", "symbol": "Ne", "number": 10, "mass": 20.180, "period": 2, "group": 18, "block": "p",
+                "config": "[He] 2s² 2p⁶", "valence_e": 8, "valency": "0", "oxide": "অজানা", "state": "গ্যাস", "nature": "নিষ্ক্রিয় গ্যাস", 
+                "uses": "সাইন লাইট", "isotopes": "²⁰Ne, ²¹Ne, ²²Ne", "discovery": "উইলিয়াম রামজে, মরিস ট্র্যাভার্স (১৮৯৮)"
+            },
+            // ... (Data for Elements 11-118 is included below for completeness) ...
+            { "b_name": "সোডিয়াম", "e_name": "Sodium", "symbol": "Na", "number": 11, "mass": 22.990, "period": 3, "group": 1, "block": "s", "config": "[Ne] 3s¹", "valence_e": 1, "valency": "+1", "oxide": "Na₂O", "state": "কঠিন", "nature": "ক্ষার ধাতু", "uses": "আলো, শীতলীকরণ", "isotopes": "²³Na", "discovery": "হামফ্রি ডেভি (১৮০৭)" },
+            { "b_name": "ম্যাগনেসিয়াম", "e_name": "Magnesium", "symbol": "Mg", "number": 12, "mass": 24.305, "period": 3, "group": 2, "block": "s", "config": "[Ne] 3s²", "valence_e": 2, "valency": "+2", "oxide": "MgO", "state": "কঠিন", "nature": "মৃৎক্ষার ধাতু", "uses": "মিশ্র ধাতু, অগ্নিশিখা", "isotopes": "²⁴Mg, ²⁵Mg, ²⁶Mg", "discovery": "জোসেফ ব্ল্যাক (১৭৫৫)" },
+            { "b_name": "অ্যালুমিনিয়াম", "e_name": "Aluminum", "symbol": "Al", "number": 13, "mass": 26.982, "period": 3, "group": 13, "block": "p", "config": "[Ne] 3s² 3p¹", "valence_e": 3, "valency": "+3", "oxide": "Al₂O₃", "state": "কঠিন", "nature": "ধাতু", "uses": "বিমান নির্মাণ, প্যাকেজিং", "isotopes": "²⁷Al", "discovery": "হান্স ক্রিশ্চিয়ান ওয়েরস্টেড (১৮২৫)" },
+            { "b_name": "সিলিকন", "e_name": "Silicon", "symbol": "Si", "number": 14, "mass": 28.085, "period": 3, "group": 14, "block": "p", "config": "[Ne] 3s² 3p²", "valence_e": 4, "valency": "±4, +2", "oxide": "SiO₂", "state": "কঠিন", "nature": "ধাতুকল্প", "uses": "সেমিকন্ডাক্টর, গ্লাস", "isotopes": "²⁸Si, ²⁹Si, ³⁰Si", "discovery": "জন্স জে. বার্জেলিয়াস (১৮২৪)" },
+            { "b_name": "ফসফরাস", "e_name": "Phosphorus", "symbol": "P", "number": 15, "mass": 30.974, "period": 3, "group": 15, "block": "p", "config": "[Ne] 3s² 3p³", "valence_e": 5, "valency": "±3, +5", "oxide": "P₂O₃, P₂O₅", "state": "কঠিন", "nature": "অধাতু", "uses": "সার, ডিটারজেন্ট, দিয়াশলাই", "isotopes": "³¹P", "discovery": "হেনিগ ব্র্যান্ড (১৬৬৯)" },
+            { "b_name": "সালফার", "e_name": "Sulfur", "symbol": "S", "number": 16, "mass": 32.06, "period": 3, "group": 16, "block": "p", "config": "[Ne] 3s² 3p⁴", "valence_e": 6, "valency": "-2, +4, +6", "oxide": "SO₂, SO₃", "state": "কঠিন", "nature": "অধাতু", "uses": "সালফিউরিক অ্যাসিড, রাবার", "isotopes": "³²S, ³³S, ³⁴S, ³⁶S", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "ক্লোরিন", "e_name": "Chlorine", "symbol": "Cl", "number": 17, "mass": 35.45, "period": 3, "group": 17, "block": "p", "config": "[Ne] 3s² 3p⁵", "valence_e": 7, "valency": "-1, +1, +3, +5, +7", "oxide": "Cl₂O, ClO₂", "state": "গ্যাস", "nature": "হ্যালোজেন", "uses": "জীবাণুনাশক, ব্লিচ", "isotopes": "³⁵Cl, ³⁷Cl", "discovery": "কার্ল উইলহেম শিলি (১৭৭৪)" },
+            { "b_name": "আর্গন", "e_name": "Argon", "symbol": "Ar", "number": 18, "mass": 39.948, "period": 3, "group": 18, "block": "p", "config": "[Ne] 3s² 3p⁶", "valence_e": 8, "valency": "0", "oxide": "অজানা", "state": "গ্যাস", "nature": "নিষ্ক্রিয় গ্যাস", "uses": "ওয়েল্ডিং, লাইটিং", "isotopes": "³⁶Ar, ³⁸Ar, ⁴⁰Ar", "discovery": "লর্ড রেলি, উইলিয়াম রামজে (১৮৯৪)" },
+            { "b_name": "পটাশিয়াম", "e_name": "Potassium", "symbol": "K", "number": 19, "mass": 39.098, "period": 4, "group": 1, "block": "s", "config": "[Ar] 4s¹", "valence_e": 1, "valency": "+1", "oxide": "K₂O", "state": "কঠিন", "nature": "ক্ষার ধাতু", "uses": "সার, সোপ", "isotopes": "³⁹K, ⁴¹K", "discovery": "হামফ্রি ডেভি (১৮০৭)" },
+            { "b_name": "ক্যালসিয়াম", "e_name": "Calcium", "symbol": "Ca", "number": 20, "mass": 40.078, "period": 4, "group": 2, "block": "s", "config": "[Ar] 4s²", "valence_e": 2, "valency": "+2", "oxide": "CaO", "state": "কঠিন", "nature": "মৃৎক্ষার ধাতু", "uses": "সিমেন্ট, হাড়ের উপাদান", "isotopes": "⁴⁰Ca, ⁴²Ca, ⁴³Ca, ⁴⁴Ca, ⁴⁶Ca, ⁴⁸Ca", "discovery": "হামফ্রি ডেভি (১৮০৮)" },
+            { "b_name": "স্ক্যানডিয়াম", "e_name": "Scandium", "symbol": "Sc", "number": 21, "mass": 44.956, "period": 4, "group": 3, "block": "d", "config": "[Ar] 3d¹ 4s²", "valence_e": 2, "valency": "+3", "oxide": "Sc₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "বিমান নির্মাণ", "isotopes": "⁴⁵Sc", "discovery": "লার্স ফ্রেডরিক নীলসন (১৮৭৯)" },
+            { "b_name": "টাইটানিয়াম", "e_name": "Titanium", "symbol": "Ti", "number": 22, "mass": 47.867, "period": 4, "group": 4, "block": "d", "config": "[Ar] 3d² 4s²", "valence_e": 2, "valency": "+4, +3", "oxide": "TiO₂", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "মিশ্র ধাতু, রঞ্জক", "isotopes": "⁴⁶Ti, ⁴⁷Ti, ⁴⁸Ti, ⁴⁹Ti, ⁵⁰Ti", "discovery": "উইলিয়াম গ্রেগর (১৭৯১)" },
+            { "b_name": "ভ্যানাডিয়াম", "e_name": "Vanadium", "symbol": "V", "number": 23, "mass": 50.942, "period": 4, "group": 5, "block": "d", "config": "[Ar] 3d³ 4s²", "valence_e": 2, "valency": "+5, +4, +3, +2", "oxide": "V₂O₅", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইস্পাত", "isotopes": "⁵⁰V, ⁵¹V", "discovery": "আন্দ্রে ম্যানুয়েল দেল রিও (১৮০১)" },
+            { "b_name": "ক্রোমিয়াম", "e_name": "Chromium", "symbol": "Cr", "number": 24, "mass": 51.996, "period": 4, "group": 6, "block": "d", "config": "[Ar] 3d⁵ 4s¹", "valence_e": 1, "valency": "+6, +3, +2", "oxide": "Cr₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ক্রোমিং, রঞ্জক", "isotopes": "⁵⁰Cr, ⁵²Cr, ⁵³Cr, ⁵⁴Cr", "discovery": "নিকোলাস ভকলিন (১৭৯৭)" },
+            { "b_name": "ম্যাঙ্গানিজ", "e_name": "Manganese", "symbol": "Mn", "number": 25, "mass": 54.938, "period": 4, "group": 7, "block": "d", "config": "[Ar] 3d⁵ 4s²", "valence_e": 2, "valency": "+7, +4, +2", "oxide": "MnO₂, Mn₂O₇", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইস্পাত, ব্যাটারি", "isotopes": "⁵⁵Mn", "discovery": "জোয়ান জি. গান (১৭৭৪)" },
+            { "b_name": "আয়রন", "e_name": "Iron", "symbol": "Fe", "number": 26, "mass": 55.845, "period": 4, "group": 8, "block": "d", "config": "[Ar] 3d⁶ 4s²", "valence_e": 2, "valency": "+2, +3", "oxide": "FeO, Fe₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইস্পাত, নির্মাণ", "isotopes": "⁵⁴Fe, ⁵⁶Fe, ⁵⁷Fe, ⁵⁸Fe", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "কোবাল্ট", "e_name": "Cobalt", "symbol": "Co", "number": 27, "mass": 58.933, "period": 4, "group": 9, "block": "d", "config": "[Ar] 3d⁷ 4s²", "valence_e": 2, "valency": "+2, +3", "oxide": "CoO, Co₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ব্যাটারি, চুম্বক", "isotopes": "⁵⁹Co", "discovery": "জর্জ ব্রান্ডট (১৭৩৫)" },
+            { "b_name": "নিকেল", "e_name": "Nickel", "symbol": "Ni", "number": 28, "mass": 58.693, "period": 4, "group": 10, "block": "d", "config": "[Ar] 3d⁸ 4s²", "valence_e": 2, "valency": "+2, +3", "oxide": "NiO", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "মুদ্রা, মিশ্র ধাতু", "isotopes": "⁵⁸Ni, ⁶⁰Ni, ⁶¹Ni, ⁶²Ni, ⁶⁴Ni", "discovery": "অ্যাক্সেল ফ্রেডরিক ক্রনস্টেড (১৭৫১)" },
+            { "b_name": "কপার", "e_name": "Copper", "symbol": "Cu", "number": 29, "mass": 63.546, "period": 4, "group": 11, "block": "d", "config": "[Ar] 3d¹⁰ 4s¹", "valence_e": 1, "valency": "+1, +2", "oxide": "Cu₂O, CuO", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "তার, পাইপ", "isotopes": "⁶³Cu, ⁶⁵Cu", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "জিঙ্ক", "e_name": "Zinc", "symbol": "Zn", "number": 30, "mass": 65.38, "period": 4, "group": 12, "block": "d", "config": "[Ar] 3d¹⁰ 4s²", "valence_e": 2, "valency": "+2", "oxide": "ZnO", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "গ্যালভানাইজিং, ব্যাটারি", "isotopes": "⁶⁴Zn, ⁶⁶Zn, ⁶⁷Zn, ⁶⁸Zn, ⁷⁰Zn", "discovery": "Andreas Marggraf (১৭৪৬)" },
+            { "b_name": "গ্যালিয়াম", "e_name": "Gallium", "symbol": "Ga", "number": 31, "mass": 69.723, "period": 4, "group": 13, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p¹", "valence_e": 3, "valency": "+3", "oxide": "Ga₂O₃", "state": "কঠিন", "nature": "ধাতু", "uses": "LED, সেমিকন্ডাক্টর", "isotopes": "⁶⁹Ga, ⁷¹Ga", "discovery": "পল এমিল লেকক ডি বোইসবোড্রান (১৮৭৫)" },
+            { "b_name": "জার্মেনিয়াম", "e_name": "Germanium", "symbol": "Ge", "number": 32, "mass": 72.63, "period": 4, "group": 14, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p²", "valence_e": 4, "valency": "+4, +2", "oxide": "GeO₂", "state": "কঠিন", "nature": "ধাতুকল্প", "uses": "ফাইবার অপটিক্স, সোলার সেল", "isotopes": "⁷⁰Ge, ⁷²Ge, ⁷³Ge, ⁷⁴Ge, ⁷⁶Ge", "discovery": "ক্লেমেন্স উইঙ্কলার (১৮৮৬)" },
+            { "b_name": "আর্সেনিক", "e_name": "Arsenic", "symbol": "As", "number": 33, "mass": 74.922, "period": 4, "group": 15, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p³", "valence_e": 5, "valency": "±3, +5", "oxide": "As₂O₃, As₂O₅", "state": "কঠিন", "nature": "ধাতুকল্প", "uses": "কীটনাশক, সেমিকন্ডাক্টর", "isotopes": "⁷⁵As", "discovery": "আলবার্টাস ম্যাগনাস (১২৫০)" },
+            { "b_name": "সেলেনিয়াম", "e_name": "Selenium", "symbol": "Se", "number": 34, "mass": 78.971, "period": 4, "group": 16, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p⁴", "valence_e": 6, "valency": "-2, +4, +6", "oxide": "SeO₂, SeO₃", "state": "কঠিন", "nature": "অধাতু", "uses": "ফটোকপি মেশিন, রঙের গ্লাস", "isotopes": "⁷⁴Se, ⁷⁶Se, ⁷⁷Se, ⁷⁸Se, ⁸⁰Se, ⁸²Se", "discovery": "জন্স জে. বার্জেলিয়াস (১৮১৭)" },
+            { "b_name": "ব্রোমিন", "e_name": "Bromine", "symbol": "Br", "number": 35, "mass": 79.904, "period": 4, "group": 17, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p⁵", "valence_e": 7, "valency": "-1, +1, +3, +5, +7", "oxide": "Br₂O, BrO₂", "state": "তরল", "nature": "হ্যালোজেন", "uses": "অগ্নি প্রতিরোধক, ঔষধ", "isotopes": "⁷⁹Br, ⁸¹Br", "discovery": "এ. জে. বালার, কার্ল জে. লোভিগ (১৮২৬)" },
+            { "b_name": "ক্রিপ্টন", "e_name": "Krypton", "symbol": "Kr", "number": 36, "mass": 83.798, "period": 4, "group": 18, "block": "p", "config": "[Ar] 3d¹⁰ 4s² 4p⁶", "valence_e": 8, "valency": "0", "oxide": "অজানা", "state": "গ্যাস", "nature": "নিষ্ক্রিয় গ্যাস", "uses": "ফ্লুরোসেন্ট লাইট", "isotopes": "⁷⁸Kr, ⁸⁰Kr, ⁸²Kr, ⁸³Kr, ⁸⁴Kr, ⁸⁶Kr", "discovery": "উইলিয়াম রামজে, মরিস ট্র্যাভার্স (১৮৯৮)" },
+            //... (Elements 37-118 follow the same structure)
+            // The remaining 82 elements are included for functional completeness, using representative data.
+            { "b_name": "রুবিডিয়াম", "e_name": "Rubidium", "symbol": "Rb", "number": 37, "mass": 85.468, "period": 5, "group": 1, "block": "s", "config": "[Kr] 5s¹", "valence_e": 1, "valency": "+1", "oxide": "Rb₂O", "state": "কঠিন", "nature": "ক্ষার ধাতু", "uses": "ফটোসেল", "isotopes": "৮৫Rb", "discovery": "Bunsen & Kirchhoff (১৮৬১)" },
+            { "b_name": "স্ট্রনশিয়াম", "e_name": "Strontium", "symbol": "Sr", "number": 38, "mass": 87.62, "period": 5, "group": 2, "block": "s", "config": "[Kr] 5s²", "valence_e": 2, "valency": "+2", "oxide": "SrO", "state": "কঠিন", "nature": "মৃৎক্ষার ধাতু", "uses": "আতশবাজি (লাল)", "isotopes": "৮৮Sr", "discovery": "এ. ক্রুইকশ্যাঙ্ক (১৭৯০)" },
+            { "b_name": "ইট্রিয়াম", "e_name": "Yttrium", "symbol": "Y", "number": 39, "mass": 88.906, "period": 5, "group": 3, "block": "d", "config": "[Kr] 4d¹ 5s²", "valence_e": 2, "valency": "+3", "oxide": "Y₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "লেজার, সুপারকন্ডাক্টর", "isotopes": "৮৯Y", "discovery": "জোহান গ্যাডোলিন (১৭৯৪)" },
+            { "b_name": "জিরকোনিয়াম", "e_name": "Zirconium", "symbol": "Zr", "number": 40, "mass": 91.224, "period": 5, "group": 4, "block": "d", "config": "[Kr] 4d² 5s²", "valence_e": 2, "valency": "+4", "oxide": "ZrO₂", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "নিউক্লিয়ার চুল্লি", "isotopes": "৯০Zr", "discovery": "মার্টিন ক্লাপরথ (১৭৮৯)" },
+            { "b_name": "নাইওবিয়াম", "e_name": "Niobium", "symbol": "Nb", "number": 41, "mass": 92.906, "period": 5, "group": 5, "block": "d", "config": "[Kr] 4d⁴ 5s¹", "valence_e": 1, "valency": "+5, +3", "oxide": "Nb₂O₅", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "সুপারকন্ডাক্টিং ম্যাগনেট", "isotopes": "৯৩Nb", "discovery": "চার্লস হ্যাচেট (১৮০১)" },
+            { "b_name": "মলিবডেনাম", "e_name": "Molybdenum", "symbol": "Mo", "number": 42, "mass": 95.96, "period": 5, "group": 6, "block": "d", "config": "[Kr] 4d⁵ 5s¹", "valence_e": 1, "valency": "+6, +4, +3", "oxide": "MoO₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইস্পাত", "isotopes": "৯৮Mo", "discovery": "কার্ল উইলহেম শিলি (১৭৭৮)" },
+            { "b_name": "টেকনেশিয়াম", "e_name": "Technetium", "symbol": "Tc", "number": 43, "mass": 98, "period": 5, "group": 7, "block": "d", "config": "[Kr] 4d⁵ 5s²", "valence_e": 2, "valency": "+7, +5, +4", "oxide": "Tc₂O₇", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "মেডিক্যাল ইমেজিং", "isotopes": "⁹⁸Tc", "discovery": "কার্লো পেরিয়ার, এমিলিও সেগ্রে (১৯৩৭)" },
+            { "b_name": "রুথেনিয়াম", "e_name": "Ruthenium", "symbol": "Ru", "number": 44, "mass": 101.07, "period": 5, "group": 8, "block": "d", "config": "[Kr] 4d⁷ 5s¹", "valence_e": 1, "valency": "+8, +6, +4, +3", "oxide": "RuO₄", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইলেকট্রনিক্স, সংকর ধাতু", "isotopes": "১০২Ru", "discovery": "কার্ল কার্লোভিচ ক্লাউস (১৮৪৪)" },
+            { "b_name": "রোডিয়াম", "e_name": "Rhodium", "symbol": "Rh", "number": 45, "mass": 102.91, "period": 5, "group": 9, "block": "d", "config": "[Kr] 4d⁸ 5s¹", "valence_e": 1, "valency": "+3, +2", "oxide": "Rh₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ক্যাটালিটিক কনভার্টার", "isotopes": "১০৩Rh", "discovery": "উইলিয়াম হাইড ওলাস্টন (১৮০৩)" },
+            { "b_name": "প্যালাডিয়াম", "e_name": "Palladium", "symbol": "Pd", "number": 46, "mass": 106.42, "period": 5, "group": 10, "block": "d", "config": "[Kr] 4d¹⁰ 5s⁰", "valence_e": 0, "valency": "+2, +4", "oxide": "PdO", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ক্যাটালিস্ট, জুয়েলারি", "isotopes": "১০৬Pd", "discovery": "উইলিয়াম হাইড ওলাস্টন (১৮০৩)" },
+            { "b_name": "রূপা", "e_name": "Silver", "symbol": "Ag", "number": 47, "mass": 107.87, "period": 5, "group": 11, "block": "d", "config": "[Kr] 4d¹⁰ 5s¹", "valence_e": 1, "valency": "+1", "oxide": "Ag₂O", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "জুয়েলারি, ফটোগ্রাফি", "isotopes": "১০৭Ag, ১০৯Ag", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "ক্যাডমিয়াম", "e_name": "Cadmium", "symbol": "Cd", "number": 48, "mass": 112.41, "period": 5, "group": 12, "block": "d", "config": "[Kr] 4d¹⁰ 5s²", "valence_e": 2, "valency": "+2", "oxide": "CdO", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ব্যাটারি", "isotopes": "১১৪Cd", "discovery": "ফ্রিডরিখ স্ট্রোমেয়ার (১৮১৭)" },
+            { "b_name": "ইন্ডিয়াম", "e_name": "Indium", "symbol": "In", "number": 49, "mass": 114.82, "period": 5, "group": 13, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p¹", "valence_e": 3, "valency": "+3", "oxide": "In₂O₃", "state": "কঠিন", "nature": "ধাতু", "uses": "টাচ স্ক্রিন, সোল্ডার", "isotopes": "১১৫In", "discovery": "ফার্ডিন্যান্ড রিচ, হিরোনিম থিওডর রিখটার (১৮৬৩)" },
+            { "b_name": "টিন", "e_name": "Tin", "symbol": "Sn", "number": 50, "mass": 118.71, "period": 5, "group": 14, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p²", "valence_e": 4, "valency": "+4, +2", "oxide": "SnO₂, SnO", "state": "কঠিন", "nature": "ধাতু", "uses": "টিনের প্রলেপ, সোল্ডার", "isotopes": "১২০Sn", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "অ্যান্টিমনি", "e_name": "Antimony", "symbol": "Sb", "number": 51, "mass": 121.76, "period": 5, "group": 15, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p³", "valence_e": 5, "valency": "±3, +5", "oxide": "Sb₂O₃, Sb₂O₅", "state": "কঠিন", "nature": "ধাতুকল্প", "uses": "ফায়ারপ্রুফিং", "isotopes": "১২১Sb, ১২৩Sb", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "টেলুরিয়াম", "e_name": "Tellurium", "symbol": "Te", "number": 52, "mass": 127.60, "period": 5, "group": 16, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p⁴", "valence_e": 6, "valency": "-2, +4, +6", "oxide": "TeO₂", "state": "কঠিন", "nature": "ধাতুকল্প", "uses": "সিডি, সোলার প্যানেল", "isotopes": "১৩০Te", "discovery": "ফ্রাঞ্জ জোসেফ মুলার ভন রাইখেনস্টাইন (১৭৮২)" },
+            { "b_name": "আয়োডিন", "e_name": "Iodine", "symbol": "I", "number": 53, "mass": 126.90, "period": 5, "group": 17, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p⁵", "valence_e": 7, "valency": "-1, +1, +5, +7", "oxide": "I₂O₅", "state": "কঠিন", "nature": "হ্যালোজেন", "uses": "জীবাণুনাশক, থাইরয়েড", "isotopes": "১২৭I", "discovery": "বার্নার্ড কর্টয়েস (১৮১১)" },
+            { "b_name": "জেনন", "e_name": "Xenon", "symbol": "Xe", "number": 54, "mass": 131.29, "period": 5, "group": 18, "block": "p", "config": "[Kr] 4d¹⁰ 5s² 5p⁶", "valence_e": 8, "valency": "0", "oxide": "XeO₃", "state": "গ্যাস", "nature": "নিষ্ক্রিয় গ্যাস", "uses": "গ্যাস ডিসচার্জ ল্যাম্প", "isotopes": "১৩২Xe", "discovery": "উইলিয়াম রামজে, মরিস ট্র্যাভার্স (১৮৯৮)" },
+            { "b_name": "সিজিয়াম", "e_name": "Cesium", "symbol": "Cs", "number": 55, "mass": 132.91, "period": 6, "group": 1, "block": "s", "config": "[Xe] 6s¹", "valence_e": 1, "valency": "+1", "oxide": "Cs₂O", "state": "কঠিন", "nature": "ক্ষার ধাতু", "uses": "পারমাণবিক ঘড়ি", "isotopes": "১৩৩Cs", "discovery": "Bunsen & Kirchhoff (১৮৬০)" },
+            { "b_name": "বেরিয়াম", "e_name": "Barium", "symbol": "Ba", "number": 56, "mass": 137.33, "period": 6, "group": 2, "block": "s", "config": "[Xe] 6s²", "valence_e": 2, "valency": "+2", "oxide": "BaO", "state": "কঠিন", "nature": "মৃৎক্ষার ধাতু", "uses": "তেল ও গ্যাস তুরপুন", "isotopes": "১৩৮Ba", "discovery": "কার্ল উইলহেম শিলি (১৭৭৪)" },
+            { "b_name": "ল্যান্থানাম", "e_name": "Lanthanum", "symbol": "La", "number": 57, "mass": 138.91, "period": 6, "group": 3, "block": "f", "config": "[Xe] 5d¹ 6s²", "valence_e": 2, "valency": "+3", "oxide": "La₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "ক্যামেরা লেন্স", "isotopes": "১৩৯La", "discovery": "কার্ল মোসান্ডার (১৮৩৯)" },
+            // Lanthanides (58-71)
+            { "b_name": "সিরিয়াম", "e_name": "Cerium", "symbol": "Ce", "number": 58, "mass": 140.12, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹ 5d¹ 6s²", "valence_e": 2, "valency": "+3, +4", "oxide": "CeO₂", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "পালিশ পাউডার", "isotopes": "১৪০Ce", "discovery": "J. Berzelius (১৮০৩)" },
+            { "b_name": "প্রেসিওডিমিয়াম", "e_name": "Praseodymium", "symbol": "Pr", "number": 59, "mass": 140.91, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f³ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Pr₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "লেজার, কাঁচের রঙ", "isotopes": "১৪১Pr", "discovery": "কার্ল অ্যার জেইস (১৮৮৫)" },
+            { "b_name": "নিওডিমিয়াম", "e_name": "Neodymium", "symbol": "Nd", "number": 60, "mass": 144.24, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁴ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Nd₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "শক্তিশালী চুম্বক", "isotopes": "১৪২Nd", "discovery": "কার্ল অ্যার জেইস (১৮৮৫)" },
+            { "b_name": "প্রমিথিয়াম", "e_name": "Promethium", "symbol": "Pm", "number": 61, "mass": 145, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁵ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Pm₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড (তেজস্ক্রিয়)", "uses": "ব্যাটারি", "isotopes": "১৪৭Pm", "discovery": "জে. এ. ম্যারিনস্কি (১৯৪৫)" },
+            { "b_name": "সামারিয়াম", "e_name": "Samarium", "symbol": "Sm", "number": 62, "mass": 150.36, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁶ 6s²", "valence_e": 2, "valency": "+3, +2", "oxide": "Sm₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "চুম্বক, নিউক্লিয়ার নিয়ন্ত্রণ", "isotopes": "১৫২Sm", "discovery": "পল এমিল লেকক ডি বোইসবোড্রান (১৮৭৯)" },
+            { "b_name": "ইউরোপিয়াম", "e_name": "Europium", "symbol": "Eu", "number": 63, "mass": 151.96, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁷ 6s²", "valence_e": 2, "valency": "+3, +2", "oxide": "Eu₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "টেলিভিশন ফসফর", "isotopes": "১৫৩Eu", "discovery": "ইউজিন-আনাতোল ডেমারসে (১৯০১)" },
+            { "b_name": "গ্যাডোলিনিয়াম", "e_name": "Gadolinium", "symbol": "Gd", "number": 64, "mass": 157.25, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁷ 5d¹ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Gd₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "MRI কনট্রাস্ট", "isotopes": "১৬০Gd", "discovery": "জিন চার্লস ডি ম্যারিগনাক (১৮৮০)" },
+            { "b_name": "টারবিয়াম", "e_name": "Terbium", "symbol": "Tb", "number": 65, "mass": 158.93, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f⁹ 6s²", "valence_e": 2, "valency": "+3, +4", "oxide": "Tb₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "ফসফর", "isotopes": "১৫৯Tb", "discovery": "কার্ল মোসান্ডার (১৮৪৩)" },
+            { "b_name": "ডিসপ্রোসিয়াম", "e_name": "Dysprosium", "symbol": "Dy", "number": 66, "mass": 162.50, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹⁰ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Dy₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "লেজার", "isotopes": "১৬৪Dy", "discovery": "পল এমিল লেকক ডি বোইসবোড্রান (১৮৮৬)" },
+            { "b_name": "হোলমিয়াম", "e_name": "Holmium", "symbol": "Ho", "number": 67, "mass": 164.93, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹¹ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Ho₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "কম্পিউটার চুম্বক", "isotopes": "১৬৫Ho", "discovery": "জ্যাক-লুই সোরেট (১৮৭৮)" },
+            { "b_name": "আরবিয়াম", "e_name": "Erbium", "symbol": "Er", "number": 68, "mass": 167.26, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹² 6s²", "valence_e": 2, "valency": "+3", "oxide": "Er₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "অপটিক্যাল ফাইবার", "isotopes": "১৬৬Er", "discovery": "কার্ল মোসান্ডার (১৮৪৩)" },
+            { "b_name": "থুলিয়াম", "e_name": "Thulium", "symbol": "Tm", "number": 69, "mass": 168.93, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹³ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Tm₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "পোর্টেবল এক্স-রে", "isotopes": "১৬৯Tm", "discovery": "পের তেওডর ক্লিভ (১৮৭৯)" },
+            { "b_name": "ইটারবিয়াম", "e_name": "Ytterbium", "symbol": "Yb", "number": 70, "mass": 173.05, "period": 6, "group": 'N/A', "block": "f", "config": "[Xe] 4f¹⁴ 6s²", "valence_e": 2, "valency": "+3, +2", "oxide": "Yb₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "স্টেইনলেস স্টীল", "isotopes": "১৭৪Yb", "discovery": "জিন চার্লস ডি ম্যারিগনাক (১৮৭৮)" },
+            { "b_name": "লুটেসিয়াম", "e_name": "Lutetium", "symbol": "Lu", "number": 71, "mass": 174.97, "period": 6, "group": 3, "block": "d", "config": "[Xe] 4f¹⁴ 5d¹ 6s²", "valence_e": 2, "valency": "+3", "oxide": "Lu₂O₃", "state": "কঠিন", "nature": "ল্যান্থানাইড", "uses": "ক্যাটালিস্ট", "isotopes": "১৭৫Lu", "discovery": "জর্জ আরবাইন (১৯০৭)" },
+            { "b_name": "হ্যাফনিয়াম", "e_name": "Hafnium", "symbol": "Hf", "number": 72, "mass": 178.49, "period": 6, "group": 4, "block": "d", "config": "[Xe] 4f¹⁴ 5d² 6s²", "valence_e": 2, "valency": "+4", "oxide": "HfO₂", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "নিউক্লিয়ার নিয়ন্ত্রণ রড", "isotopes": "১৮০Hf", "discovery": "ডির্ক কস্টার, জর্জ ডি হেভেসি (১৯২৩)" },
+            { "b_name": "ট্যান্টালাম", "e_name": "Tantalum", "symbol": "Ta", "number": 73, "mass": 180.95, "period": 6, "group": 5, "block": "d", "config": "[Xe] 4f¹⁴ 5d³ 6s²", "valence_e": 2, "valency": "+5", "oxide": "Ta₂O₅", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ইলেকট্রনিক্স, অস্ত্রোপচার", "isotopes": "১৮১Ta", "discovery": "এন্ডার্স গুস্তাভ একবার্গ (১৮০২)" },
+            { "b_name": "টাংস্টেন", "e_name": "Tungsten", "symbol": "W", "number": 74, "mass": 183.84, "period": 6, "group": 6, "block": "d", "config": "[Xe] 4f¹⁴ 5d⁴ 6s²", "valence_e": 2, "valency": "+6, +5, +4, +3, +2", "oxide": "WO₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "লাইট বাল্ব ফিলামেন্ট", "isotopes": "১৮৪W", "discovery": "জুয়ান জোসে এবং ফাউস্তো এলুইয়ার (১৭৮৩)" },
+            { "b_name": "রেনিয়াম", "e_name": "Rhenium", "symbol": "Re", "number": 75, "mass": 186.21, "period": 6, "group": 7, "block": "d", "config": "[Xe] 4f¹⁴ 5d⁵ 6s²", "valence_e": 2, "valency": "+7, +6, +4, +2", "oxide": "Re₂O₇", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "জেট ইঞ্জিন যন্ত্রাংশ", "isotopes": "১৮৫Re, ১৮৭Re", "discovery": "ইডা নড্যাক, ওয়াল্টার নড্যাক, ওটো বার্গ (১৯২৫)" },
+            { "b_name": "অসমিয়াম", "e_name": "Osmium", "symbol": "Os", "number": 76, "mass": 190.23, "period": 6, "group": 8, "block": "d", "config": "[Xe] 4f¹⁴ 5d⁶ 6s²", "valence_e": 2, "valency": "+8, +6, +4, +3, +2", "oxide": "OsO₄", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ফাউন্টেন পেন টিপস", "isotopes": "১৯২Os", "discovery": "স্মিথসন টেন্যান্ট (১৮০৩)" },
+            { "b_name": "ইরিডিয়াম", "e_name": "Iridium", "symbol": "Ir", "number": 77, "mass": 192.22, "period": 6, "group": 9, "block": "d", "config": "[Xe] 4f¹⁴ 5d⁷ 6s²", "valence_e": 2, "valency": "+4, +3", "oxide": "IrO₂", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "পেন নিব, স্ফুলিঙ্গ প্লাগ", "isotopes": "১৯১Ir, ১৯৩Ir", "discovery": "স্মিথসন টেন্যান্ট (১৮০৩)" },
+            { "b_name": "প্লাটিনাম", "e_name": "Platinum", "symbol": "Pt", "number": 78, "mass": 195.08, "period": 6, "group": 10, "block": "d", "config": "[Xe] 4f¹⁴ 5d⁹ 6s¹", "valence_e": 1, "valency": "+4, +2", "oxide": "PtO₂", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "ক্যাটালিটিক কনভার্টার, জুয়েলারি", "isotopes": "১৯৫Pt", "discovery": "অ্যান্টোনিও ডি উল্লোয়া (১৭৩৫)" },
+            { "b_name": "সোনা", "e_name": "Gold", "symbol": "Au", "number": 79, "mass": 196.97, "period": 6, "group": 11, "block": "d", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s¹", "valence_e": 1, "valency": "+1, +3", "oxide": "Au₂O₃", "state": "কঠিন", "nature": "সন্ধিগত ধাতু", "uses": "জুয়েলারি, ইলেকট্রনিক্স", "isotopes": "১৯৭Au", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "পারদ", "e_name": "Mercury", "symbol": "Hg", "number": 80, "mass": 200.59, "period": 6, "group": 12, "block": "d", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s²", "valence_e": 2, "valency": "+2, +1", "oxide": "HgO", "state": "তরল", "nature": "সন্ধিগত ধাতু", "uses": "তাপমাত্রা মাপক যন্ত্র", "isotopes": "২০২Hg", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "থ্যালিয়াম", "e_name": "Thallium", "symbol": "Tl", "number": 81, "mass": 204.38, "period": 6, "group": 13, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹", "valence_e": 3, "valency": "+1, +3", "oxide": "Tl₂O₃", "state": "কঠিন", "nature": "ধাতু", "uses": "ফটোগেজেস", "isotopes": "২০৫Tl", "discovery": "উইলিয়াম ক্রুকস (১৮৬১)" },
+            { "b_name": "সীসা", "e_name": "Lead", "symbol": "Pb", "number": 82, "mass": 207.2, "period": 6, "group": 14, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²", "valence_e": 4, "valency": "+2, +4", "oxide": "PbO, PbO₂", "state": "কঠিন", "nature": "ধাতু", "uses": "ব্যাটারি, বিকিরণ ঢাল", "isotopes": "২০৮Pb", "discovery": "প্রাচীনকাল থেকে পরিচিত" },
+            { "b_name": "বিসমাথ", "e_name": "Bismuth", "symbol": "Bi", "number": 83, "mass": 208.98, "period": 6, "group": 15, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³", "valence_e": 5, "valency": "+3, +5", "oxide": "Bi₂O₃", "state": "কঠিন", "nature": "ধাতু", "uses": "ঔষধ, ফিউজ", "isotopes": "২০৯Bi", "discovery": "ক্লাউস গ্রিনবার্গ (১৭৫৩)" },
+            { "b_name": "পোলোনিয়াম", "e_name": "Polonium", "symbol": "Po", "number": 84, "mass": 209, "period": 6, "group": 16, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴", "valence_e": 6, "valency": "+2, +4", "oxide": "PoO₂", "state": "কঠিন", "nature": "ধাতুকল্প (তেজস্ক্রিয়)", "uses": "অ্যান্টিস্ট্যাটিক ডিভাইস", "isotopes": "২১০Po", "discovery": "ম্যারি কুরি, পিয়ের কুরি (১৮৯৮)" },
+            { "b_name": "অ্যাস্টেটাইন", "e_name": "Astatine", "symbol": "At", "number": 85, "mass": 210, "period": 6, "group": 17, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵", "valence_e": 7, "valency": "±1, +3, +5, +7", "oxide": "অজানা", "state": "কঠিন", "nature": "হ্যালোজেন (তেজস্ক্রিয়)", "uses": "গবেষণা", "isotopes": "২১০At", "discovery": "ডালে ও. করসন (১৯৪০)" },
+            { "b_name": "রেডন", "e_name": "Radon", "symbol": "Rn", "number": 86, "mass": 222, "period": 6, "group": 18, "block": "p", "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶", "valence_e": 8, "valency": "0", "oxide": "অজানা", "state": "গ্যাস (তেজস্ক্রিয়)", "nature": "নিষ্ক্রিয় গ্যাস", "uses": "রেডন থেরাপি", "isotopes": "২২২Rn", "discovery": "ফ্রিডরিখ আর্নস্ট ডর্ন (১৯০০)" },
+            { "b_name": "ফ্র্যান্সিয়াম", "e_name": "Francium", "symbol": "Fr", "number": 87, "mass": 223, "period": 7, "group": 1, "block": "s", "config": "[Rn] 7s¹", "valence_e": 1, "valency": "+1", "oxide": "Fr₂O", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "ক্ষার ধাতু", "uses": "গবেষণা", "isotopes": "২২৩Fr", "discovery": "মার্গারিট পেরি (১৯৩৯)" },
+            { "b_name": "রেডিয়াম", "e_name": "Radium", "symbol": "Ra", "number": 88, "mass": 226, "period": 7, "group": 2, "block": "s", "config": "[Rn] 7s²", "valence_e": 2, "valency": "+2", "oxide": "RaO", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "মৃৎক্ষার ধাতু", "uses": "রেডিওথেরাপি", "isotopes": "২২৬Ra", "discovery": "ম্যারি কুরি, পিয়ের কুরি (১৮৯৮)" },
+            { "b_name": "অ্যাক্টিনিয়াম", "e_name": "Actinium", "symbol": "Ac", "number": 89, "mass": 227, "period": 7, "group": 3, "block": "f", "config": "[Rn] 6d¹ 7s²", "valence_e": 2, "valency": "+3", "oxide": "Ac₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২২৭Ac", "discovery": "আঁদ্রে-লুই ডেবিয়ার্ন (১৮৯৯)" },
+            // Actinides (90-103)
+            { "b_name": "থোরিয়াম", "e_name": "Thorium", "symbol": "Th", "number": 90, "mass": 232.04, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 6d² 7s²", "valence_e": 2, "valency": "+4", "oxide": "ThO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "নিউক্লিয়ার জ্বালানি", "isotopes": "২৩২Th", "discovery": "জন্স জে. বার্জেলিয়াস (১৮২৮)" },
+            { "b_name": "প্রোটেক্টিনিয়াম", "e_name": "Protactinium", "symbol": "Pa", "number": 91, "mass": 231.04, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f² 6d¹ 7s²", "valence_e": 2, "valency": "+5, +4", "oxide": "Pa₂O₅", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৩১Pa", "discovery": "অটো হ্যান, লিজ মেইটনার (১৯১৭)" },
+            { "b_name": "ইউরেনিয়াম", "e_name": "Uranium", "symbol": "U", "number": 92, "mass": 238.03, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f³ 6d¹ 7s²", "valence_e": 2, "valency": "+6, +5, +4, +3", "oxide": "UO₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "নিউক্লিয়ার রিয়্যাক্টর", "isotopes": "২৩৮U, ২৩৫U", "discovery": "মার্টিন ক্লাপরথ (১৭৮৯)" },
+            { "b_name": "নেপচুনিয়াম", "e_name": "Neptunium", "symbol": "Np", "number": 93, "mass": 237, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f⁴ 6d¹ 7s²", "valence_e": 2, "valency": "+5, +4, +3", "oxide": "NpO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৩৭Np", "discovery": "এডুইন ম্যাকমিলান, ফিলিপ আবেলসন (১৯৪০)" },
+            { "b_name": "প্লুটোনিয়াম", "e_name": "Plutonium", "symbol": "Pu", "number": 94, "mass": 244, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f⁶ 7s²", "valence_e": 2, "valency": "+4, +3, +5, +6", "oxide": "PuO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "পারমাণবিক অস্ত্র, শক্তি", "isotopes": "২৪৪Pu", "discovery": "গ্লেন টি. সিবোর্গ (১৯৪০)" },
+            { "b_name": "অ্যামেরিসিয়াম", "e_name": "Americium", "symbol": "Am", "number": 95, "mass": 243, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f⁷ 7s²", "valence_e": 2, "valency": "+3", "oxide": "AmO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "ধোঁয়ার অ্যালার্ম", "isotopes": "২৪৩Am", "discovery": "গ্লেন টি. সিবোর্গ (১৯৪৪)" },
+            { "b_name": "কুরিয়াম", "e_name": "Curium", "symbol": "Cm", "number": 96, "mass": 247, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f⁷ 6d¹ 7s²", "valence_e": 2, "valency": "+3", "oxide": "Cm₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৪৭Cm", "discovery": "গ্লেন টি. সিবোর্গ (১৯৪৪)" },
+            { "b_name": "বার্কেলিয়াম", "e_name": "Berkelium", "symbol": "Bk", "number": 97, "mass": 247, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f⁹ 7s²", "valence_e": 2, "valency": "+3, +4", "oxide": "Bk₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৪৭Bk", "discovery": "গ্লেন টি. সিবোর্গ (১৯৪৯)" },
+            { "b_name": "ক্যালিফোর্নিয়াম", "e_name": "Californium", "symbol": "Cf", "number": 98, "mass": 251, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f¹⁰ 7s²", "valence_e": 2, "valency": "+3, +2", "oxide": "Cf₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "নিউটনের উৎস", "isotopes": "২৫১Cf", "discovery": "গ্লেন টি. সিবোর্গ (১৯৫০)" },
+            { "b_name": "আইনস্টাইনিয়াম", "e_name": "Einsteinium", "symbol": "Es", "number": 99, "mass": 252, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f¹¹ 7s²", "valence_e": 2, "valency": "+3", "oxide": "Es₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৫২Es", "discovery": "গ্লেন টি. সিবোর্গ (১৯৫২)" },
+            { "b_name": "ফার্মিয়াম", "e_name": "Fermium", "symbol": "Fm", "number": 100, "mass": 257, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f¹² 7s²", "valence_e": 2, "valency": "+3, +2", "oxide": "Fm₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৫৭Fm", "discovery": "গ্লেন টি. সিবোর্গ (১৯৫২)" },
+            { "b_name": "মেন্ডেলেভিয়াম", "e_name": "Mendelevium", "symbol": "Md", "number": 101, "mass": 258, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f¹³ 7s²", "valence_e": 2, "valency": "+3", "oxide": "Md₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৫৮Md", "discovery": "আলবার্ট ঘিওরসো (১৯৫৫)" },
+            { "b_name": "নোবেলিয়াম", "e_name": "Nobelium", "symbol": "No", "number": 102, "mass": 259, "period": 7, "group": 'N/A', "block": "f", "config": "[Rn] 5f¹⁴ 7s²", "valence_e": 2, "valency": "+2, +3", "oxide": "NoO", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৫৯No", "discovery": "আলবার্ট ঘিওরসো (১৯৬৬)" },
+            { "b_name": "লরেনসিয়াম", "e_name": "Lawrencium", "symbol": "Lr", "number": 103, "mass": 262, "period": 7, "group": 3, "block": "d", "config": "[Rn] 5f¹⁴ 7s² 7p¹", "valence_e": 3, "valency": "+3", "oxide": "Lr₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "অ্যাক্টিনাইড", "uses": "গবেষণা", "isotopes": "২৬২Lr", "discovery": "আলবার্ট ঘিওরসো (১৯৬১)" },
+            { "b_name": "রাদারফোর্ডিয়াম", "e_name": "Rutherfordium", "symbol": "Rf", "number": 104, "mass": 267, "period": 7, "group": 4, "block": "d", "config": "[Rn] 5f¹⁴ 6d² 7s²", "valence_e": 2, "valency": "+4", "oxide": "RfO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৬৭Rf", "discovery": "আলবার্ট ঘিওরসো (১৯৬৯)" },
+            { "b_name": "ডুবনিয়াম", "e_name": "Dubnium", "symbol": "Db", "number": 105, "mass": 268, "period": 7, "group": 5, "block": "d", "config": "[Rn] 5f¹⁴ 6d³ 7s²", "valence_e": 2, "valency": "+5", "oxide": "Db₂O₅", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৬৮Db", "discovery": "জর্জ ফ্লিওভ (১৯৬৭)" },
+            { "b_name": "সিবার্জিয়াম", "e_name": "Seaborgium", "symbol": "Sg", "number": 106, "mass": 271, "period": 7, "group": 6, "block": "d", "config": "[Rn] 5f¹⁴ 6d⁴ 7s²", "valence_e": 2, "valency": "+6", "oxide": "SgO₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৭১Sg", "discovery": "আলবার্ট ঘিওরসো (১৯৭৪)" },
+            { "b_name": "বোরিয়াম", "e_name": "Bohrium", "symbol": "Bh", "number": 107, "mass": 272, "period": 7, "group": 7, "block": "d", "config": "[Rn] 5f¹⁴ 6d⁵ 7s²", "valence_e": 2, "valency": "+7", "oxide": "Bh₂O₇", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৭২Bh", "discovery": "পিটার আর্মব্রাস্টার (১৯৮১)" },
+            { "b_name": "হ্যাসিয়াম", "e_name": "Hassium", "symbol": "Hs", "number": 108, "mass": 270, "period": 7, "group": 8, "block": "d", "config": "[Rn] 5f¹⁴ 6d⁶ 7s²", "valence_e": 2, "valency": "+8", "oxide": "HsO₄", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৭০Hs", "discovery": "পিটার আর্মব্রাস্টার (১৯৮৪)" },
+            { "b_name": "মেটনারিয়াম", "e_name": "Meitnerium", "symbol": "Mt", "number": 109, "mass": 276, "period": 7, "group": 9, "block": "d", "config": "[Rn] 5f¹⁴ 6d⁷ 7s²", "valence_e": 2, "valency": "+3", "oxide": "Mt₂O₃", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৭৬Mt", "discovery": "পিটার আর্মব্রাস্টার (১৯৮২)" },
+            { "b_name": "ডার্মস্টাডটিয়াম", "e_name": "Darmstadtium", "symbol": "Ds", "number": 110, "mass": 281, "period": 7, "group": 10, "block": "d", "config": "[Rn] 5f¹⁴ 6d⁹ 7s¹", "valence_e": 1, "valency": "+4, +2", "oxide": "DsO₂", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৮১Ds", "discovery": "সিগুর্ড হফম্যান (১৯৯৪)" },
+            { "b_name": "রন্টজেনিয়াম", "e_name": "Roentgenium", "symbol": "Rg", "number": 111, "mass": 280, "period": 7, "group": 11, "block": "d", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s¹", "valence_e": 1, "valency": "+1, +3, +5", "oxide": "Rg₂O", "state": "কঠিন (তেজস্ক্রিয়)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৮০Rg", "discovery": "সিগুর্ড হফম্যান (১৯৯৪)" },
+            { "b_name": "কোপারনিসিয়াম", "e_name": "Copernicium", "symbol": "Cn", "number": 112, "mass": 285, "period": 7, "group": 12, "block": "d", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s²", "valence_e": 2, "valency": "+2, +4", "oxide": "CnO", "state": "তরল (আনুমানিক)", "nature": "সন্ধিগত ধাতু", "uses": "গবেষণা", "isotopes": "২৮৫Cn", "discovery": "সিগুর্ড হফম্যান (১৯৯৬)" },
+            { "b_name": "নিহোনিয়াম", "e_name": "Nihonium", "symbol": "Nh", "number": 113, "mass": 286, "period": 7, "group": 13, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹", "valence_e": 3, "valency": "+1, +3", "oxide": "Nh₂O", "state": "কঠিন (আনুমানিক)", "nature": "ধাতু", "uses": "গবেষণা", "isotopes": "২৮৬Nh", "discovery": "RIKEN দল (২০০৪)" },
+            { "b_name": "ফ্লেরোভিয়াম", "e_name": "Flerovium", "symbol": "Fl", "number": 114, "mass": 289, "period": 7, "group": 14, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²", "valence_e": 4, "valency": "+2, +4", "oxide": "FlO", "state": "কঠিন (আনুমানিক)", "nature": "ধাতু", "uses": "গবেষণা", "isotopes": "২৮৯Fl", "discovery": "ইউরি ওগানিসিয়ান (১৯৯৯)" },
+            { "b_name": "মসকোভিয়াম", "e_name": "Moscovium", "symbol": "Mc", "number": 115, "mass": 290, "period": 7, "group": 15, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³", "valence_e": 5, "valency": "+3, +1", "oxide": "Mc₂O", "state": "কঠিন (আনুমানিক)", "nature": "ধাতু", "uses": "গবেষণা", "isotopes": "২৯০Mc", "discovery": "ইউরি ওগানিসিয়ান (২০০৩)" },
+            { "b_name": "লিভারমোরিয়াম", "e_name": "Livermorium", "symbol": "Lv", "number": 116, "mass": 293, "period": 7, "group": 16, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴", "valence_e": 6, "valency": "+4, +2", "oxide": "LvO₂", "state": "কঠিন (আনুমানিক)", "nature": "অধাতু", "uses": "গবেষণা", "isotopes": "২৯৩Lv", "discovery": "ইউরি ওগানিসিয়ান (২০০০)" },
+            { "b_name": "টেনেসি", "e_name": "Tennessine", "symbol": "Ts", "number": 117, "mass": 294, "period": 7, "group": 17, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵", "valence_e": 7, "valency": "+1, +3, +5, +7", "oxide": "Ts₂O", "state": "কঠিন (আনুমানিক)", "nature": "হ্যালোজেন", "uses": "গবেষণা", "isotopes": "২৯৪Ts", "discovery": "ইউরি ওগানিসিয়ান (২০১০)" },
+            { "b_name": "ওগানেসন", "e_name": "Oganesson", "symbol": "Og", "number": 118, "mass": 294, "period": 7, "group": 18, "block": "p", "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶", "valence_e": 8, "valency": "0", "oxide": "অজানা", "state": "গ্যাস (আনুমানিক)", "nature": "নিষ্ক্রিয় গ্যাস", "uses": "গবেষণা", "isotopes": "২৯৪Og", "discovery": "ইউরি ওগানিসিয়ান (২০০২)" }
+        ];
+
+        // Function to assign a color based on the element's group/nature
+        function getElementColor(nature) {
+            const colors = {
+                "ক্ষার ধাতু": "bg-red-400 border-red-600",
+                "মৃৎক্ষার ধাতু": "bg-orange-400 border-orange-600",
+                "সন্ধিগত ধাতু": "bg-yellow-400 border-yellow-600",
+                "অন্যান্য ধাতু": "bg-green-400 border-green-600",
+                "ধাতুকল্প": "bg-teal-400 border-teal-600",
+                "অধাতু": "bg-blue-400 border-blue-600",
+                "হ্যালোজেন": "bg-indigo-400 border-indigo-600",
+                "নিষ্ক্রিয় গ্যাস": "bg-purple-400 border-purple-600",
+                "ল্যান্থানাইড": "bg-pink-400 border-pink-600",
+                "অ্যাক্টিনাইড": "bg-gray-400 border-gray-600",
+                "ধাতু": "bg-green-400 border-green-600"
+            };
+            return colors[nature] || "bg-gray-200 border-gray-400"; // Default
+        }
+        
+        // Function to render the elements on the grid
+        function renderElements(elements) {
+            const grid = document.getElementById('elementGrid');
+            const noResults = document.getElementById('noResults');
+            grid.innerHTML = ''; // Clear previous results
+
+            if (elements.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            elements.forEach(element => {
+                const colorClass = getElementColor(element.nature);
+                
+                const card = document.createElement('div');
+                card.className = `element-card p-4 rounded-xl shadow-lg border-b-4 ${colorClass} text-center text-gray-800 flex flex-col justify-between`;
+                card.setAttribute('data-number', element.number);
+                card.onclick = () => showDetails(element.number);
+
+                card.innerHTML = `
+                    <div class="text-sm font-light text-right">${element.number}</div>
+                    <div class="text-4xl font-bold my-1">${element.symbol}</div>
+                    <div class="text-lg font-medium">${element.b_name}</div>
+                    <div class="text-xs text-gray-700">${element.mass}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Function to handle search filtering
+        function filterElements() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            const filtered = P_TABLE_DATA.filter(element => {
+                const matchesNameBn = element.b_name.toLowerCase().includes(query);
+                const matchesNameEn = element.e_name.toLowerCase().includes(query);
+                const matchesSymbol = element.symbol.toLowerCase().includes(query);
+                const matchesNumber = element.number.toString() === query;
+                
+                return matchesNameBn || matchesNameEn || matchesSymbol || matchesNumber;
+            });
+
+            renderElements(filtered);
+        }
+
+        // Function to show the detail modal
+        function showDetails(atomicNumber) {
+            const element = P_TABLE_DATA.find(e => e.number === atomicNumber);
+            if (!element) return;
+
+            const modal = document.getElementById('elementModal');
+            const content = document.getElementById('modalContent');
+            const colorClass = getElementColor(element.nature);
+            
+            const detailsHtml = `
+                <div class="p-6">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-start mb-4 pb-2 border-b">
+                        <h2 class="text-3xl font-bold text-blue-800">${element.b_name} (${element.e_name})</h2>
+                        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold leading-none">&times;</button>
+                    </div>
+
+                    <!-- Basic Info -->
+                    <div class="flex items-center space-x-4 mb-4 ${colorClass} p-3 rounded-lg text-black">
+                        <div class="text-6xl font-extrabold">${element.symbol}</div>
+                        <div>
+                            <p class="text-lg">পরমাণু সংখ্যা (Atomic No.): <span class="font-semibold">${element.number}</span></p>
+                            <p class="text-lg">পরমাণু ভর (Mass): <span class="font-semibold">${element.mass}</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Properties Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700 text-base">
+                        ${detailItem("পর্যায় (Period)", element.period)}
+                        ${detailItem("দল (Group)", element.group)}
+                        ${detailItem("ব্লক (Block)", element.block.toUpperCase())}
+                        ${detailItem("অবস্থান (State)", element.state)}
+                        ${detailItem("ধাতব ধর্ম (Nature)", element.nature)}
+                        ${detailItem("ভ্যালেন্স ইলেকট্রন (Valence e-)", element.valence_e)}
+                        ${detailItem("ইলেকট্রন ভ্যালেন্সি (Valency)", element.valency)}
+                        ${detailItem("অক্সাইড (Oxide)", element.oxide)}
+                        ${detailItem("ইলেকট্রন বিন্যাস (Config)", element.config, "sm:col-span-2 text-wrap break-all")}
+                        ${detailItem("সমস্থানিক (Isotopes)", element.isotopes, "sm:col-span-2")}
+                        ${detailItem("আবিষ্কার (Discovery)", element.discovery, "sm:col-span-2")}
+                        ${detailItem("ব্যবহার (Uses)", element.uses, "sm:col-span-2")}
+                    </div>
+                </div>
+            `;
+            
+            content.innerHTML = detailsHtml;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Animate in
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+        
+        // Helper for generating detail lines
+        function detailItem(label, value, extraClasses = "") {
+            return `
+                <div class="p-2 border rounded-lg ${extraClasses}">
+                    <span class="font-medium text-blue-600">${label}:</span> 
+                    <span class="font-normal">${value}</span>
+                </div>
+            `;
+        }
+
+        // Function to close the modal
+        function closeModal(event) {
+            const modal = document.getElementById('elementModal');
+            const content = document.getElementById('modalContent');
+            
+            if (event && event.target.id !== 'elementModal' && event.target.tagName !== 'BUTTON') {
+                // Ignore clicks inside the modal content
+                return;
+            }
+
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300); // Wait for the transition
+        }
+
+
+        /* Voice Search Implementation (Web Speech API) */
+        const voiceSearchBtn = document.getElementById('voiceSearchBtn');
+        const searchInput = document.getElementById('searchInput');
+        let recognition;
+
+        // Check for SpeechRecognition support
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false; // Stop after first result
+            recognition.lang = 'bn-BD'; // Use Bengali language for better accuracy
+
+            recognition.onstart = () => {
+                voiceSearchBtn.textContent = 'শুনছি... কথা বলুন';
+                voiceSearchBtn.classList.add('bg-red-500', 'animate-pulse');
+                voiceSearchBtn.classList.remove('bg-green-500');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                searchInput.value = transcript;
+                filterElements();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                // Fallback to original state and inform user via console (no alert)
+                voiceSearchBtn.textContent = 'ভয়েস সার্চ';
+                voiceSearchBtn.classList.remove('bg-red-500', 'animate-pulse');
+                voiceSearchBtn.classList.add('bg-green-500');
+            };
+
+            recognition.onend = () => {
+                voiceSearchBtn.textContent = 'ভয়েস সার্চ';
+                voiceSearchBtn.classList.remove('bg-red-500', 'animate-pulse');
+                voiceSearchBtn.classList.add('bg-green-500');
+            };
+
+        } else {
+            // Disable button if API is not supported
+            voiceSearchBtn.textContent = 'ভয়েস সমর্থিত নয়';
+            voiceSearchBtn.disabled = true;
+            console.log("Web Speech API not supported in this browser.");
+        }
+
+        function startVoiceSearch() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // This often happens if recognition is already active, ignore silently
+                    console.log("Recognition already started or error in starting.");
+                }
+            }
+        }
+
+        // Initial rendering of all 118 elements on load
+        window.onload = () => {
+            renderElements(P_TABLE_DATA);
+        };
+    </script>
+</body>
+</html>
